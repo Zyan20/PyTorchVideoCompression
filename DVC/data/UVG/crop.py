@@ -1,28 +1,29 @@
-import subprocess
 import os.path
 
-path = "D:/VideoCompression/Dataset/UVG/"
-docs = os.listdir(path)
+
+datasetFolder = "D:/VideoCompression/Dataset/UVG/"
+docs = os.listdir(datasetFolder)
+
+outputFolder = "./videos_crop/"
 
 for d in docs:
-    if d.endswith(".yuv"):
-        fileName = os.path.splitext(os.path.basename(d))[0]
+    if d.endswith(".yuv"):  # yuv文件
+
+        fileName = os.path.splitext(os.path.basename(d))[0]     # short filename
         newFileName = fileName.replace("1920x1080", "1920x1024")
-        cmd = [
+
+        cmds = [
             "ffmpeg",
             "-pix_fmt", "yuv420p",
             "-s", "1920x1080",
-            "-i", path + d,
+            "-i", datasetFolder + d,
             "-vf", "crop=1920:1024:0:0",
-            f"./videos_crop/{newFileName}.yuv"
+            outputFolder + newFileName + ".yuv"
         ]
 
-        process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
+        cmd = ""
+        for c in cmds:
+            cmd += c + " "
 
-        # 获取输出流
-        while True:
-            output = process.stdout.readline()
-            if process.poll() is not None:
-                break
-
-            print(output)
+        print(cmd)
+        os.system(cmd)
