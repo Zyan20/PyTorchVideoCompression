@@ -9,6 +9,7 @@ DVC: An End-to-end Deep Video Compression Framework, Guo Lu, Wanli Ouyang, Dong 
 
 - Python==3.6
 - PyTorch==1.2
+- pip install scikit-image opencv-python pypng torchac ninja tensorboardX
 
 ## Data Preparation
 
