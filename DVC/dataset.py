@@ -17,7 +17,13 @@ from subnet.ms_ssim_torch import ms_ssim
 from augmentation import random_flip, random_crop_and_pad_image_and_labels
 
 class UVGDataSet(data.Dataset):
-    def __init__(self, root="data/UVG/images/", filelist="data/UVG/originalv.txt", refdir='L12000', testfull=False):
+    def __init__(
+        self, 
+        root="data/UVG/images/", 
+        filelist="data/UVG/originalv.txt", 
+        refdir='L12000', 
+        testfull=False
+    ):
         with open(filelist) as f:
             folders = f.readlines()
         self.ref = []
@@ -95,8 +101,14 @@ class UVGDataSet(data.Dataset):
         return input_images, ref_image, self.refbpp[index], refpsnr, refmsssim
 
 class DataSet(data.Dataset):
-    def __init__(self, path="data/vimeo_septuplet/test.txt", im_height=256, im_width=256):
-        self.image_input_list, self.image_ref_list = self.get_vimeo(filefolderlist=path)
+    def __init__(
+        self, 
+        dataFolder = "data/vimeo_septuplet/sequences/",
+        dataTxtFolder ="data/vimeo_septuplet/test.txt", 
+        im_height=256, 
+        im_width=256
+    ):
+        self.image_input_list, self.image_ref_list = self.get_vimeo(dataFolder, dataTxtFolder)
         self.im_height = im_height
         self.im_width = im_width
         
