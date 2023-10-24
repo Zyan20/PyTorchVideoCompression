@@ -264,7 +264,10 @@ if __name__ == "__main__":
     # save_model(model, 0)
     global train_dataset, test_dataset
     if args.testuvg:
-        test_dataset = UVGDataSet(refdir=ref_i_dir, testfull=True)
+        test_dataset = UVGDataSet(
+            root="/home/zyan/Learning/VideoCompression/PyTorchVideoCompression/DVC/data/UVG/images/",
+            filelist="/home/zyan/Learning/VideoCompression/PyTorchVideoCompression/DVC/data/UVG/originalv.txt",
+            refdir=ref_i_dir, testfull=True)
         print('testing UVG')
         testuvg(0, testfull=True)
         exit(0)

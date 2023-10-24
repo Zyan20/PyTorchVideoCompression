@@ -22,7 +22,8 @@ class UVGDataSet(data.Dataset):
         root="data/UVG/images/", 
         filelist="data/UVG/originalv.txt", 
         refdir='L12000', 
-        testfull=False
+        testfull=False,
+        keyint = 12,
     ):
         with open(filelist) as f:
             folders = f.readlines()
@@ -30,11 +31,18 @@ class UVGDataSet(data.Dataset):
         self.refbpp = []
         self.input = []
         self.hevcclass = []
-        AllIbpp = self.getbpp(refdir)
+        # AllIbpp = self.getbpp(refdir)
+        bpps_ref_file = open(root + "bpp.json")
+        bpps_ref = json.load(bpps_ref_file)
+        print("folders: ", folders)
+        print("bpp ref: ", bpps_ref)
+
         ii = 0
         for folder in folders:
             seq = folder.rstrip()
-            seqIbpp = AllIbpp[ii]
+            # seqIbpp = AllIbpp[ii]
+            seqIbpp = bpps_ref[seq]
+
             imlist = os.listdir(os.path.join(root, seq))
             cnt = 0
             for im in imlist:
@@ -48,7 +56,7 @@ class UVGDataSet(data.Dataset):
                 refpath = os.path.join(root, seq, refdir, 'im'+str(i * 12 + 1).zfill(4)+'.png')
                 inputpath = []
                 for j in range(12):
-                    inputpath.append(os.path.join(root, seq, 'im' + str(i * 12 + j + 1).zfill(3)+'.png'))
+                    inputpath.append(os.path.join(root, seq, 'im' + str(i * 12 + j + 1).zfill(4)+'.png'))
                 self.ref.append(refpath)
                 self.refbpp.append(seqIbpp)
                 self.input.append(inputpath)
@@ -59,7 +67,7 @@ class UVGDataSet(data.Dataset):
         Ibpp = None
         if ref_i_folder == 'H265L20':
             print('use H265L20')
-            Ibpp = []# you need to fill bpps after generating crf=20
+            Ibpp = [0.9109690832713293] # you need to fill bpps after generating crf=20
         elif ref_i_folder == 'H265L23':
             print('use H265L23')
             Ibpp = []# you need to fill bpps after generating crf=23

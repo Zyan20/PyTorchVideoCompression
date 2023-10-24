@@ -6,7 +6,7 @@ short = ['Beauty', 'HoneyBee', 'ReadySteadyGo', 'YachtRide', 'Bosphorus', 'Jocke
 
 for i in range(num):
     saveroot = 'images/' + short[i]
-    savepath = 'images/' + short[i] + '/im%03d.png'
+    savepath = 'images/' + short[i] + '/img%4d.png'
     if not os.path.exists(saveroot):
         os.makedirs(saveroot)
     print('ffmpeg -y -pix_fmt yuv420p -s 1920x1024 -i ' + 'videos_crop/' + video_name[i] +  ' ' + savepath)
