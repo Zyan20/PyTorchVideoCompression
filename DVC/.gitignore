@@ -1,4 +1,4 @@
 data/UVG/CreateI/out/
-data/UVG/images/
+data/UVG/images/*
 !data/UVG/images/bpp.json
 examples/example/savecode/

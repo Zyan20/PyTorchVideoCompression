@@ -47,8 +47,7 @@ def h265encode(inputVideoPath, crf, sw, sh):
     # keyint: interval of I frames
     cmd = f'ffmpeg \
     -pix_fmt yuv420p \
-    -s {sw}x{sh} -i {inputVideoPath} \
-    -vframes 100 \
+    -s:v {sw}x{sh} -i {inputVideoPath} \
     -c:v libx265 \
     -preset veryfast \
     -tune zerolatency \
@@ -100,11 +99,11 @@ if __name__ == "__main__":
             h265encode(datasetFolder + yuv, crf, sw, sh)
 
         # extract images from h265 encoded videos
-        outputFolder = os.path.join("out", videoNameShort, f"H265L{crf}")
+        outputFolder = os.path.join(imageFolder, videoNameShort, f"H265L{crf}")
         if not os.path.exists(outputFolder):
             os.makedirs(outputFolder)
             convertVideo2img(f"out/{videoNameShort}/h265/out.mkv", outputFolder)
         
 
-        dstPath = os.path.join(imageFolder, videoNameShort, f"H265L{crf}")
-        shutil.copytree(outputFolder, dstPath)
+        # dstPath = os.path.join(imageFolder, videoNameShort, f"H265L{crf}")
+        # shutil.copytree(outputFolder, dstPath)

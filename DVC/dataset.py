@@ -53,10 +53,10 @@ class UVGDataSet(data.Dataset):
             else:
                 framerange = 1
             for i in range(framerange):
-                refpath = os.path.join(root, seq, refdir, 'im'+str(i * 12 + 1).zfill(4)+'.png')
+                refpath = os.path.join(root, seq, refdir, 'img'+str(i * 12 + 1).zfill(4)+'.png')
                 inputpath = []
                 for j in range(12):
-                    inputpath.append(os.path.join(root, seq, 'im' + str(i * 12 + j + 1).zfill(4)+'.png'))
+                    inputpath.append(os.path.join(root, seq, 'img' + str(i * 12 + j + 1).zfill(4)+'.png'))
                 self.ref.append(refpath)
                 self.refbpp.append(seqIbpp)
                 self.input.append(inputpath)

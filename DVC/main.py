@@ -265,8 +265,8 @@ if __name__ == "__main__":
     global train_dataset, test_dataset
     if args.testuvg:
         test_dataset = UVGDataSet(
-            root="/home/zyan/Learning/VideoCompression/PyTorchVideoCompression/DVC/data/UVG/images/",
-            filelist="/home/zyan/Learning/VideoCompression/PyTorchVideoCompression/DVC/data/UVG/originalv.txt",
+            root = "C:/Home/Learning/VideoCompression/PyTorchVideoCompression/DVC/data/UVG/images/",
+            filelist = "C:/Home/Learning/VideoCompression/PyTorchVideoCompression/DVC/data/UVG/originalv.txt",
             refdir=ref_i_dir, testfull=True)
         print('testing UVG')
         testuvg(0, testfull=True)
