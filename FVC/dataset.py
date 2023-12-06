@@ -7,6 +7,9 @@ from subnet.basics import *
 from subnet.ms_ssim_torch import ms_ssim
 from augmentation import random_flip, random_crop_and_pad_image_and_labels
 
+from PIL import Image
+from torchvision import transforms
+
 
 class UVGDataSet(data.Dataset):
     def __init__(self, root="/data/dataset/UVG/images/", filelist="/data/dataset/UVG/originalv.txt", refdir='L12000', testfull=False):
@@ -180,3 +183,93 @@ class DataSet(data.Dataset):
         ref_image, input_images = random_flip(ref_image, input_images)
 
         return ref_image, input_images
+
+
+class HEVCDataSet(data.Dataset):
+
+    def __init__(self,
+        seqs_folder,
+        crf = 20,
+        GOP = 12            
+    ) -> None:
+        super().__init__()
+
+        self.GOP = GOP
+
+        self.refs = []
+        self.inputs = []
+
+        for seq in os.listdir(seqs_folder):
+            ref_folder = os.path.join(seqs_folder, seq, f"H265L{crf}")
+
+            img_folder = os.path.join(seqs_folder, seq)
+
+            imgs = os.listdir(img_folder)
+
+            frame_group = len(imgs) // GOP    # num of GOP
+
+            for i in range(frame_group):
+                ref_frame_path = os.path.join(ref_folder, "im{:04}.png".format(i * frame_group + 1))
+
+                input_imgs = []
+                for j in range(GOP):
+                    img_path = os.path.join(img_folder, "im{:04}.png".format(i * GOP + j + 2))
+                    if os.path.exists(img_path):
+                        input_imgs.append(img_path)
+
+                        
+                self.refs.append(ref_frame_path)
+                self.inputs.append(input_imgs)
+                
+
+
+    def __getitem__(self, index):
+        ref_image = imageio.imread(self.refs[index]).transpose(2, 0, 1).astype(np.float32) / 255.0
+
+        input_images = []
+        for filename in self.inputs[index]:
+            input_image = (imageio.imread(filename).transpose(2, 0, 1)).astype(np.float32) / 255.0
+            input_image, _ = self.pad(torch.tensor(input_image))
+            input_images.append(input_image)
+
+
+
+        ref, _ = self.pad(torch.Tensor(ref_image))
+        inputs = torch.Tensor(input_images)
+
+        return ref, inputs
+        
+            
+
+
+    def pad(self, x, p = 64):
+        h, w = x.size(1), x.size(2)
+
+        new_h = (h + p - 1) // p * p     
+        new_w = (w + p - 1) // p * p
+
+        padding_left = (new_w - w) // 2
+        padding_right = new_w - w - padding_left     
+        padding_top = (new_h - h) // 2     
+        padding_bottom = new_h - h - padding_top     
+        padding = (padding_left, padding_right, padding_top, padding_bottom)     
+
+        x = F.pad(
+            x,         
+            padding,         
+            mode="constant",         
+            value=0,     
+        )
+        return x, padding
+
+
+    def crop(self, x, padding):
+        return F.pad(x, tuple(-p for p in padding))
+
+if __name__ == "__main__":
+    data = HEVCDataSet(
+        seqs_folder = "./data/HEVC_D/images"
+    )
+
+    (ref, inputs) = data[1]
+    print(ref.size(), inputs.size())
