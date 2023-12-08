@@ -89,6 +89,82 @@ class UVGDataSet(data.Dataset):
         return input_images, ref_image, refout
 
 
+class Viemo90K(data.Dataset):
+    def __init__(self,
+        root, train_list, im_height = 256, im_width = 256
+    ) -> None:
+        super().__init__()
+
+        self.root = root
+        self.train_list = train_list
+
+        self.im_height = im_height
+        self.im_width = im_width
+
+        self.singleframeTrain()
+        
+    
+    def singleframeTrain(self):
+        self.frame_group = self.get_single_vimeo()
+
+    def multiframeTrain(self):
+        self.frame_group, self.get_multi_vimeo()
+
+
+    def get_single_vimeo(self):
+        """
+        [(ref, input), ()...]
+        """
+        with open(self.train_list) as f:
+            data = f.readlines()
+
+        frame_pairs = []
+
+        for _, line in enumerate(data, 1):
+            input_frame_path = os.path.join(self.root, line.rstrip())
+            input_frame_number = int(input_frame_path[-5:-4])
+
+            ref_frame_number = input_frame_number - 2    # 前两帧
+            if ref_frame_number < 1:
+                continue
+
+            ref_frame_path = input_frame_number[0:-5] + str(ref_frame_number) + '.png'
+
+            frame_pairs.append((ref_frame_path, input_frame_path))
+
+
+        return frame_pairs
+    
+    def get_multi_vimeo(self):
+        """
+        [(ref, (input1, input2...)), ()...]
+        """
+        with open(self.train_list) as f:
+            data = f.readlines()
+        
+        frame_pairs_multi = []
+
+        """
+        take the first frame as ref frame
+        """
+        for n, line in enumerate(data, 1):
+            ref_frame_path = os.path.join(self.root, line.rstrip())
+            ref_frame_number = int(ref_frame_path[-5:-4])
+
+            # the first frames out of 7 frames
+            if ref_frame_number == 1:
+                input_frames_path = (
+                    ref_frame_path + str(ref_frame_number + i) + ".png"
+                    for i in range([0, 1, 2, 3, 4, 5])
+                )
+
+                frame_pairs_multi.append((ref_frame_path, input_frames_path))        
+
+
+
+
+
+
 
 class DataSet(data.Dataset):
     def __init__(self, path="/data/dataset/vimeo_septuplet/test.txt", im_height=256, im_width=256):
