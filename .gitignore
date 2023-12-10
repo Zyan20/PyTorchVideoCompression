@@ -30,3 +30,5 @@ fullperformance/*
 *.mp4
 *.mkv
 *.yuv
+
+FVC/data/HEVC_D
