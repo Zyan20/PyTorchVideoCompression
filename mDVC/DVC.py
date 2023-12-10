@@ -1,10 +1,13 @@
 import torch
 from torch import nn
+import torch.nn.functional as F
 
 from subnet.layers import ResidualBlock, GDN, conv, deconv
 from subnet.video_net import ME_Spynet, flow_warp, bilinearupsacling
 
 from compressai.entropy_models import GaussianConditional, EntropyBottleneck
+import math
+
 
 N = 128
 M = 192
@@ -37,9 +40,7 @@ class DeepVideoCompressor(nn.Module):
 
 
         # mv.entropy model
-        self.mv_prior_encoder, self.mv_prior_decoder = make_hyper_transform(N, M)
-        self.mv_hyper_entropy_model = EntropyBottleneck(M)
-        self.mv_conditionaL_entropy_model = GaussianConditional(None)
+        self.mv_entropy_model = EntropyBottleneck(N)
 
 
         # res
@@ -88,14 +89,8 @@ class DeepVideoCompressor(nn.Module):
 
         # mv entropy
         flow_latent = self.mv_encoder(flow) # [b, 2, h/16, w/16]
-        flow_latent_prior = self.mv_prior_encoder(flow_latent)
 
-        q_flow_latent_prior, flow_latent_prior_likelihoods = self.mv_hyper_entropy_model(flow_latent_prior)
-
-        gaussian_params = self.mv_prior_decoder(q_flow_latent_prior)
-        flow_latent_scales, flow_latent_means = gaussian_params.chunk(2, 1) # mu, sigma
-
-        q_flow_latent, flow_latent_likelihoods = self.mv_conditionaL_entropy_model(flow_latent, flow_latent_scales, means = flow_latent_means)
+        q_flow_latent, flow_latent_likelihoods = self.mv_entropy_model(flow_latent)
 
         q_flow = self.mv_decoder(q_flow_latent)
 
@@ -110,7 +105,7 @@ class DeepVideoCompressor(nn.Module):
         res_latent_prior = self.res_prior_encoder(res_latent)
         q_res_latent_prior, res_latent_prior_likelihoods = self.res_hyper_entropy_model(res_latent_prior)
 
-        gaussian_params = self.mv_prior_decoder(q_res_latent_prior)
+        gaussian_params = self.res_prior_decoder(q_res_latent_prior)
         res_latent_scales, res_latent_means = gaussian_params.chunk(2, 1) # mu, sigma
 
         q_res_latent, res_latent_likelihoods = self.res_conditionaL_entropy_model(res_latent, res_latent_scales, means = res_latent_means)
@@ -118,21 +113,42 @@ class DeepVideoCompressor(nn.Module):
         q_res = self.res_decoder(q_res_latent)
 
         recon_frame = prediction + q_res
+
+
+
+        # calc
+        B, C, H, W = input_frame.shape
+        num_pixels = B * H * W
+
+        bpp_mv = self._calc_bpp(flow_latent_likelihoods, num_pixels)
+        bpp_res_prior = self._calc_bpp(res_latent_prior_likelihoods, num_pixels)
+        bpp_res = self._calc_bpp(res_latent_likelihoods, num_pixels)
+
+        ME_mse = F.mse_loss(warpped, input_frame)
+        MC_mse = F.mse_loss(prediction, input_frame)
+        recon_mse = F.mse_loss(recon_frame, input_frame)
         
 
         return recon_frame, {
-            "p_mv_prior": flow_latent_prior_likelihoods,
-            "p_mv": flow_latent_likelihoods,
-            "p_res_prior": res_latent_prior_likelihoods,
-            "p_res": res_latent_likelihoods
-        }
+            "bpp_mv": bpp_mv,
+            "bpp_res_prior": bpp_res_prior,
+            "p_res": bpp_res,
 
+            "ME_mse": ME_mse,
+            "MC_mse": MC_mse,
+            "recon_mse": recon_mse
+        }
 
 
     def _init_weights(self, m):
         if isinstance(m, (nn.Conv2d, nn.ConvTranspose2d)):
-            nn.init.xavier_normal(m.weight, std=.02)
+            nn.init.xavier_normal_(m.weight)
             nn.init.constant_(m.bias, 0)
+
+            
+    def _calc_bpp(self, likelihoods, num_pixels):
+        return torch.sum(torch.clamp(-1.0 * torch.log(likelihoods + 1e-5) / math.log(2.0), 0, 50)) / num_pixels
+
 
 
 
@@ -176,12 +192,6 @@ class Refinement(nn.Module):
         self.conv5 = ResidualBlock(channelnum, channelnum)# c5
 
         self.conv6 = nn.Conv2d(channelnum, 3, 3, padding=1)
-
-        nn.init.xavier_uniform_(self.feature_ext.weight.data)
-        nn.init.constant_(self.feature_ext.bias.data, 0.0)
-        
-        nn.init.xavier_uniform_(self.conv6.weight.data)
-        nn.init.constant_(self.conv6.bias.data, 0.0)
 
     def forward(self, x):
         feature_ext = self.f_relu(self.feature_ext(x))
