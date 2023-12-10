@@ -40,7 +40,7 @@ class DVCLit(L.LightningModule):
         rd_loss = 0
 
         for i in range(1, T):
-            input_frame = Var(batch[: i, ...])
+            input_frame = Var(batch[:, i, ...])
 
             recon_frame, out  = self.model(ref_frame, input_frame)
 
@@ -62,21 +62,22 @@ class DVCLit(L.LightningModule):
         # log
         for key, value in out.items():
             if key in self.sum_out:
-                self.sum_out[key] += value.cpu().detach().numpy()
+                self.sum_out[key] += value.cpu().detach().item()
             else:
-                self.sum_out[key] = value.cpu().detach().numpy()
+                self.sum_out[key] = value.cpu().detach().item()
         
         if self.global_step % 100 == 0:
             self.training_stage()   # change state
 
-            self.sum_out["lr"] = self.optimizers().optimizer.state_dict()['param_groups'][0]['lr']
+            for key in self.sum_out:
+                self.sum_out[key] /= 100
 
-            for key in self.sum:
-                self.sum[key] /= 100
-            
+            self.sum_out["lr"] = self.optimizers().optimizer.state_dict()['param_groups'][0]['lr']
             self.sum_out["psnr"] = mse2psnr(self.sum_out["recon_mse"])
             self.sum_out["ME_psnr"] = mse2psnr(self.sum_out["ME_mse"])
             self.sum_out["MC_psnr"] = mse2psnr(self.sum_out["MC_mse"])
+            self.sum_out["bpp"] = bpp.cpu().detach().item()
+            self.sum_out["warp_weight"] = self.warp_weight
             
             self.log_dict(self.sum_out)
 
@@ -84,20 +85,20 @@ class DVCLit(L.LightningModule):
 
 
     def configure_optimizers(self):
-        optimizer = optim.Adam(self.parameters(), lr = 1e-4, betas = [0.9, 0.999])
+        optimizer = optim.Adam(self.parameters(), lr = 1e-5)
 
         return optimizer
 
 
     def training_stage(self):
-        if self.global_step < 500_000:
+        if self.global_step < 150_000:
             self.warp_weight = 0.1
-            self.optimizers().optimizer.state_dict()['param_groups'][0]['lr'] = 1e-4
-        
-        elif self.global_step < 1_000_000:
-            self.warp_weight = 0.01
             self.optimizers().optimizer.state_dict()['param_groups'][0]['lr'] = 1e-5
+        
+        elif self.global_step < 250_000:
+            self.warp_weight = 0.01
+            self.optimizers().optimizer.state_dict()['param_groups'][0]['lr'] = 5e-6
         
         else:
             self.warp_weight = 0.001
-            self.optimizers().optimizer.state_dict()['param_groups'][0]['lr'] = 5e-6
+            self.optimizers().optimizer.state_dict()['param_groups'][0]['lr'] = 1e-6
