@@ -12,7 +12,7 @@ import math
 import torch.nn.init as init
 import logging
 from torch.nn.parameter import Parameter
-from subnet import *
+from .subnet import *
 import torchac
 
 def save_model(model, iter):

@@ -13,8 +13,8 @@ import torch.nn.init as init
 import logging
 import random
 from torch.nn.parameter import Parameter
-from subnet import *
-from subnet.bitEstimator import ICLR17EntropyCoder
+from .subnet import *
+from .subnet.bitEstimator import ICLR17EntropyCoder
 gpu_num = torch.cuda.device_count()
 
 def save_model(model, optimizer, iter):

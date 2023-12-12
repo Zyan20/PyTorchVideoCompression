@@ -1,3 +1,4 @@
+from typing import Any
 import torch
 from torch import nn, optim
 from torch.autograd import Variable
@@ -5,7 +6,7 @@ import torch.nn.functional as F
 
 import lightning as L
 
-from DVC import DeepVideoCompressor
+from .DVC import DeepVideoCompressor
 
 import math
 
@@ -18,13 +19,13 @@ def mse2psnr(mse):
 
 class DVCLit(L.LightningModule):
     def __init__(self, 
-        train_lambda = 2048
+        train_lambda = 2048,
+        motion_dir = "mDVC/data/flow_pretrain_np/"
     ):
         super().__init__()
         self.automatic_optimization = False
 
-
-        self.model = DeepVideoCompressor()
+        self.model = DeepVideoCompressor(motion_dir = motion_dir)
 
         self.warp_weight = 0.1
         self.traing_lambda = train_lambda
@@ -102,3 +103,6 @@ class DVCLit(L.LightningModule):
         else:
             self.warp_weight = 0.001
             self.optimizers().optimizer.state_dict()['param_groups'][0]['lr'] = 1e-6
+
+    def forward(self, ref, input):
+        return self.model(ref, input)

@@ -2,8 +2,8 @@ import torch
 from torch import nn
 import torch.nn.functional as F
 
-from subnet.layers import ResidualBlock, GDN, conv, deconv
-from subnet.video_net import ME_Spynet, flow_warp, bilinearupsacling
+from .subnet.layers import ResidualBlock, GDN, conv, deconv
+from .subnet.video_net import ME_Spynet, flow_warp, bilinearupsacling
 
 from compressai.entropy_models import GaussianConditional, EntropyBottleneck
 import math
@@ -14,7 +14,7 @@ M = 192
 
 class DeepVideoCompressor(nn.Module):
 
-    def __init__(self):
+    def __init__(self, motion_dir = "./data/flow_pretrain_np/"):
         super().__init__()
 
         # mv
@@ -71,7 +71,7 @@ class DeepVideoCompressor(nn.Module):
 
 
         # motion
-        self.opticFlow = ME_Spynet("./data/flow_pretrain_np/")
+        self.opticFlow = ME_Spynet(motion_dir)
         self.refine = Refinement()
 
 
@@ -133,6 +133,7 @@ class DeepVideoCompressor(nn.Module):
             "bpp_mv": bpp_mv,
             "bpp_res_prior": bpp_res_prior,
             "p_res": bpp_res,
+            "bpp": bpp_mv + bpp_res_prior + bpp_res, 
 
             "ME_mse": ME_mse,
             "MC_mse": MC_mse,

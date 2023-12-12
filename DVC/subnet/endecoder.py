@@ -7,7 +7,9 @@ from .flowlib import read_flow, evaluate_flow
 # from warp import tf_warp
 import sys
 # sys.path.append('/home/user321/tf_flownet2-master/FlowNet2_src/')
-modelspath = '../flow_pretrain_np/'
+
+# modelspath = '../flow_pretrain_np/'
+modelspath = 'DVC/examples/flow_pretrain_np/'
 
 # from flow_warp import flow_warp
 
