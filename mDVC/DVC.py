@@ -14,7 +14,7 @@ M = 192
 
 class DeepVideoCompressor(nn.Module):
 
-    def __init__(self, motion_dir = "./data/flow_pretrain_np/"):
+    def __init__(self):
         super().__init__()
 
         # mv
@@ -71,7 +71,7 @@ class DeepVideoCompressor(nn.Module):
 
 
         # motion
-        self.opticFlow = ME_Spynet(motion_dir)
+        self.opticFlow = ME_Spynet()
         self.refine = Refinement()
 
 
@@ -132,14 +132,13 @@ class DeepVideoCompressor(nn.Module):
         return recon_frame, {
             "bpp_mv": bpp_mv,
             "bpp_res_prior": bpp_res_prior,
-            "p_res": bpp_res,
-            "bpp": bpp_mv + bpp_res_prior + bpp_res, 
+            "bpp_res": bpp_res,
+            "bpp": bpp_mv + bpp_res_prior + bpp_res,
 
             "ME_mse": ME_mse,
             "MC_mse": MC_mse,
             "recon_mse": recon_mse
         }
-
 
     def _init_weights(self, m):
         if isinstance(m, (nn.Conv2d, nn.ConvTranspose2d)):

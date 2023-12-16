@@ -105,7 +105,7 @@ class ResBlock(nn.Module):
 
 
 class MEBasic(nn.Module):
-    def __init__(self, level, model_dir):
+    def __init__(self):
         super(MEBasic, self).__init__()
         self.conv1 = nn.Conv2d(8, 32, 7, 1, padding=3)
         self.relu1 = nn.ReLU()
@@ -117,13 +117,6 @@ class MEBasic(nn.Module):
         self.relu4 = nn.ReLU()
         self.conv5 = nn.Conv2d(16, 2, 7, 1, padding=3)
 
-        layername = f"modelL{level}"
-        self.conv1.weight.data, self.conv1.bias.data = load_weight_form_np(model_dir, layername + '_F-1')
-        self.conv2.weight.data, self.conv2.bias.data = load_weight_form_np(model_dir, layername + '_F-2')
-        self.conv3.weight.data, self.conv3.bias.data = load_weight_form_np(model_dir, layername + '_F-3')
-        self.conv4.weight.data, self.conv4.bias.data = load_weight_form_np(model_dir, layername + '_F-4')
-        self.conv5.weight.data, self.conv5.bias.data = load_weight_form_np(model_dir, layername + '_F-5')
-
     def forward(self, x):
         x = self.relu1(self.conv1(x))
         x = self.relu2(self.conv2(x))
@@ -134,11 +127,11 @@ class MEBasic(nn.Module):
 
 
 class ME_Spynet(nn.Module):
-    def __init__(self, model_dir):
+    def __init__(self):
         super(ME_Spynet, self).__init__()
         self.L = 4
         self.moduleBasic = torch.nn.ModuleList(
-            [MEBasic(intLevel + 1, model_dir) for intLevel in range(4)])
+            [MEBasic() for _ in range(4)])
 
 
     def forward(self, im1, im2):
@@ -168,3 +161,18 @@ class ME_Spynet(nn.Module):
                                                       flowfiledsUpsample], 1))
 
         return flowfileds
+    
+
+    def _load_Spynet(self, model_dir):
+        for i, layer in enumerate(self.moduleBasic):
+            layer_name = f"modelL{i + 1}"
+
+            layer.conv1.weight.data, layer.conv1.bias.data = load_weight_form_np(model_dir, layer_name + '_F-1')
+            layer.conv2.weight.data, layer.conv2.bias.data = load_weight_form_np(model_dir, layer_name + '_F-2')
+            layer.conv3.weight.data, layer.conv3.bias.data = load_weight_form_np(model_dir, layer_name + '_F-3')
+            layer.conv4.weight.data, layer.conv4.bias.data = load_weight_form_np(model_dir, layer_name + '_F-4')
+            layer.conv5.weight.data, layer.conv5.bias.data = load_weight_form_np(model_dir, layer_name + '_F-5')
+        
+
+
+
